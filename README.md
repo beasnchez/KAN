@@ -1,0 +1,2 @@
+KARN, o Kolmogorov-Arnold Network, es un tipo de red neuronal que se basa en el teorema de Kolmogorov-Arnold. Este teorema establece que cualquier función continua de varias variables puede representarse como una suma de funciones de una sola variable. En el contexto de redes neuronales, KARN utiliza esta idea para crear modelos que pueden aproximar funciones complejas de manera eficiente.
+En PyTorch, KARN se implementa mediante capas lineales y funciones de activación no lineales, como Tanh, para transformar y combinar las características de entrada.
