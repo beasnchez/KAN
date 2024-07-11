@@ -1,0 +1,12 @@
+class KARN(nn.Module):
+    def __init__(self, input_size, inner_size):
+        super(KARN, self).__init__()
+        self.inner_weights = nn.Linear(input_size, inner_size)
+        self.outer_weights = nn.Linear(inner_size, 1)
+        self.phi = nn.Tanh()
+
+    def forward(self, x):
+        z = self.inner_weights(x)
+        v = self.phi(z)
+        y = self.outer_weights(v)
+        return y
