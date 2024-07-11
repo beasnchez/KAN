@@ -1,0 +1,71 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import DataLoader, TensorDataset
+import os
+import optuna
+from torch.utils.tensorboard import SummaryWriter
+from flask import Flask, request, jsonify
+
+class KARN(nn.Module):
+    def __init__(self, input_size, inner_size):
+        super(KARN, self).__init__()
+        self.inner_weights = nn.Linear(input_size, inner_size)
+        self.outer_weights = nn.Linear(inner_size, 1)
+        self.phi = nn.Tanh()
+
+    def forward(self, x):
+        z = self.inner_weights(x)
+        v = self.phi(z)
+        y = self.outer_weights(v)
+        return y
+
+def objective(trial):
+    inner_size = trial.suggest_int('inner_size', 5, 20)
+    lr = trial.suggest_loguniform('lr', 1e-5, 1e-1)
+    model = KARN(input_size, inner_size)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+    scheduler = StepLR(optimizer, step_size=100, gamma=0.1)
+    train_model(model, criterion, optimizer, scheduler, train_loader, 300, model_path)
+    val_loss = evaluate_model(model, x_val, y_val)
+    trial.report(val_loss, 300)
+    return val_loss
+
+def train_model(model, criterion, optimizer, scheduler, data_loader, epochs, model_path):
+    writer = SummaryWriter()
+    model.train()
+    for epoch in range(epochs):
+        total_loss = 0
+        for batch_idx, (inputs, targets) in enumerate(data_loader):
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        scheduler.step()
+        writer.add_scalar('Loss/train', total_loss / len(data_loader), epoch)
+        if epoch % 100 == 0:
+            torch.save(model.state_dict(), model_path)
+
+def evaluate_model(model, x_val, y_val):
+    model.eval()
+    with torch.no_grad():
+        val_predictions = model(x_val)
+        val_loss = criterion(val_predictions, y_val)
+    return val_loss.item()
+
+app = Flask(__name__)
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    json_input = request.json
+    x_input = torch.tensor(json_input['data']).float()
+    output = model(x_input)
+    return jsonify({'prediction': output.tolist()})
+
+if __name__ == '__main__':
+    model.load_state_dict(torch.load(model_path))
+    app.run(debug=True, host='0.0.0.0')
