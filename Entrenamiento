@@ -1,0 +1,16 @@
+def train_model(model, criterion, optimizer, scheduler, data_loader, epochs, model_path):
+    writer = SummaryWriter()  # For logging to TensorBoard
+    model.train()
+    for epoch in range(epochs):
+        total_loss = 0
+        for batch_idx, (inputs, targets) in enumerate(data_loader):
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        scheduler.step()
+        writer.add_scalar('Loss/train', total_loss / len(data_loader), epoch)
+        if epoch % 100 == 0:
+            torch.save(model.state_dict(), model_path)
