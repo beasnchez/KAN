@@ -1,0 +1,6 @@
+@app.route('/predict', methods=['POST'])
+def predict():
+    json_input = request.json
+    x_input = torch.tensor(json_input['data']).float()
+    output = model(x_input)
+    return jsonify({'prediction': output.tolist()})
